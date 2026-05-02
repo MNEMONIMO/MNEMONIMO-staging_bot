@@ -138,8 +138,18 @@ class GenerationService:
 
             # Download first photo for analysis
             primary_photo_bytes = storage_service.download_bytes(input_photos[0].file_path)
-            analysis = await ai_client.analyze_photo(primary_photo_bytes)
-            logger.info(f"Vision analysis for project {project_id}: {analysis}")
+            analysis = await ai_client.analyze_photo_structured(primary_photo_bytes)
+            logger.info(
+                f"Vision analysis for project {project_id}: "
+                f"scene={analysis.scene_type} clutter={analysis.clutter_level} "
+                f"quality={analysis.photo_quality} "
+                f"windows={analysis.window_count} doors={analysis.door_count}"
+            )
+            await self.audit_repo.log(
+                ActorType.SYSTEM, "vision_analyzed",
+                entity_type="project", entity_id=project_id,
+                payload=analysis.to_dict(),
+            )
 
             # ── Step 2: Generate images ──────────────────────────────────────
             await self.project_repo.set_status(project_id, ProjectStatus.GENERATING)
@@ -150,6 +160,7 @@ class GenerationService:
                 project=project,
                 input_image_bytes=primary_photo_bytes,
                 num_variants=num_variants,
+                analysis=analysis,
             )
 
             # ── Step 3: Postprocessing ───────────────────────────────────────

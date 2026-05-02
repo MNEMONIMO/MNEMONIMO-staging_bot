@@ -1,10 +1,13 @@
-import httpx
 import asyncio
 import base64
-from typing import List
+from typing import Any, List, Optional
+
+import httpx
 from loguru import logger
+
 from app.core.config import settings
 from app.db.models import Project
+from app.integrations.ai.vision import PhotoAnalysis, VisionClient
 
 
 # ─── Prompt builder ───────────────────────────────────────────────────────────
@@ -38,8 +41,18 @@ ROOM_CONTEXT = {
 }
 
 
-def build_image_prompt(project: Project) -> str:
-    parts = []
+def build_image_prompt(
+    project: Project,
+    analysis: Optional[PhotoAnalysis] = None,
+) -> str:
+    """Build the text-to-image prompt.
+
+    When ``analysis`` is supplied, scene-specific facts (windows, doors,
+    walking zones, clutter, photo quality) flow into the prompt so the
+    generator preserves perspective and avoids ТЗ §13.4 anti-patterns
+    (blocked windows / doors, oversized furniture, clutter).
+    """
+    parts: list[str] = []
 
     room = ROOM_CONTEXT.get(project.room_type, "room interior")
     parts.append(f"photorealistic {room}")
@@ -67,6 +80,29 @@ def build_image_prompt(project: Project) -> str:
 
     if project.extra_notes:
         parts.append(project.extra_notes)
+
+    if analysis is not None:
+        if analysis.has_windows:
+            count = analysis.window_count or 1
+            parts.append(
+                f"preserve existing {count} window{'s' if count != 1 else ''}, do not block them"
+            )
+        if analysis.has_doors:
+            count = analysis.door_count or 1
+            parts.append(
+                f"keep {count} door{'s' if count != 1 else ''} unobstructed"
+            )
+        if analysis.floor_description:
+            parts.append(f"floor: {analysis.floor_description}")
+        if analysis.walls_description:
+            parts.append(f"walls: {analysis.walls_description}")
+        if analysis.ceiling_description:
+            parts.append(f"ceiling: {analysis.ceiling_description}")
+        if analysis.walking_zones:
+            parts.append(f"walking zones: {analysis.walking_zones}")
+        if analysis.main_objects:
+            joined = ", ".join(analysis.main_objects[:6])
+            parts.append(f"existing items to harmonize with: {joined}")
 
     parts += [
         "8k resolution",
@@ -97,16 +133,33 @@ class AIGenerationClient:
 
     REPLICATE_API_URL = "https://api.replicate.com/v1/predictions"
 
+    def __init__(self, vision: Optional[VisionClient] = None) -> None:
+        self._vision = vision
+
+    @property
+    def vision(self) -> VisionClient:
+        """Lazy vision client that picks up ``settings`` at first use."""
+        if self._vision is None:
+            self._vision = VisionClient(
+                api_key=settings.vision_api_key,
+                model=settings.vision_model,
+                base_url=settings.vision_base_url,
+                timeout_seconds=settings.vision_timeout_seconds,
+                provider=settings.vision_provider,
+            )
+        return self._vision
+
     async def generate_interior(
         self,
         project: Project,
         input_image_bytes: bytes,
         num_variants: int = 1,
+        analysis: Optional[PhotoAnalysis] = None,
     ) -> List[bytes]:
         """Generate interior visualization images.
         Returns list of image bytes.
         """
-        prompt = build_image_prompt(project)
+        prompt = build_image_prompt(project, analysis=analysis)
         negative_prompt = build_negative_prompt()
 
         logger.info(f"AI prompt for project {project.id}: {prompt[:100]}...")
@@ -184,14 +237,19 @@ class AIGenerationClient:
 
             raise TimeoutError("AI generation timed out after 3 minutes")
 
-    async def analyze_photo(self, image_bytes: bytes) -> dict:
-        """Basic vision analysis stub. In production, call GPT-4V or similar."""
-        # This is a stub — replace with real vision API call
-        return {
-            "quality": "ok",
-            "detected_objects": [],
-            "estimated_room_type": "unknown",
-        }
+    async def analyze_photo(self, image_bytes: bytes) -> dict[str, Any]:
+        """Run vision analysis (ТЗ §13.2) for the given photo.
+
+        Returns a dict so existing call sites that log the result keep
+        working. Use :meth:`analyze_photo_structured` to get the typed
+        :class:`PhotoAnalysis`.
+        """
+        analysis = await self.vision.analyze(image_bytes)
+        return analysis.to_dict()
+
+    async def analyze_photo_structured(self, image_bytes: bytes) -> PhotoAnalysis:
+        """Same as :meth:`analyze_photo` but returns the typed model."""
+        return await self.vision.analyze(image_bytes)
 
 
 ai_client = AIGenerationClient()
