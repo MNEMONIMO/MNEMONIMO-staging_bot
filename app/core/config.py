@@ -20,10 +20,20 @@ class Settings(BaseSettings):
     # Redis
     redis_url: str = "redis://localhost:6379/0"
 
-    # AI
+    # AI image generation
     ai_provider: str = "replicate"
     ai_api_key: str = ""
     ai_model: str = "stability-ai/sdxl:latest"
+
+    # Vision / photo analysis (ТЗ §13.2). When ``vision_api_key`` is empty
+    # (or the call fails) the client gracefully falls back to a stub result
+    # so generation still proceeds — useful for offline development and for
+    # users who haven't paid for a vision provider yet.
+    vision_provider: str = "openai"
+    vision_api_key: str = ""
+    vision_model: str = "gpt-4o-mini"
+    vision_base_url: str = "https://api.openai.com/v1"
+    vision_timeout_seconds: int = 30
 
     # Storage
     storage_provider: str = "s3"
