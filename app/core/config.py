@@ -35,6 +35,10 @@ class Settings(BaseSettings):
     vision_base_url: str = "https://api.openai.com/v1"
     vision_timeout_seconds: int = 30
 
+    # LLM-driven concept blurb + shopping list (ТЗ §13.6 / §13.7).
+    # Uses the same vision_api_key/base_url; only the model differs.
+    llm_text_model: str = "gpt-4o-mini"
+
     # Storage
     storage_provider: str = "s3"
     s3_endpoint_url: str = "https://s3.amazonaws.com"
