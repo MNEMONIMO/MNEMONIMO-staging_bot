@@ -1,7 +1,8 @@
 from aiogram import Router, F, Bot
+from aiogram.fsm.context import FSMContext
 from aiogram.types import (
     CallbackQuery, Message, LabeledPrice,
-    PreCheckoutQuery, SuccessfulPayment,
+    PreCheckoutQuery,
 )
 from loguru import logger
 
@@ -40,7 +41,6 @@ TARIFF_LABELS = {
 
 @router.callback_query(PaymentFlow.tariff_selection, F.data.startswith("tariff:"))
 async def cb_tariff_selected(call: CallbackQuery, state: FSMContext, bot: Bot, db_user):
-    from aiogram.fsm.context import FSMContext
     tariff_str = call.data.split(":", 1)[1]
 
     try:
@@ -186,7 +186,3 @@ async def cb_payment_cancel(call: CallbackQuery, state: FSMContext):
     await call.message.edit_reply_markup()
     await call.message.answer(PAYMENT_CANCELLED, reply_markup=main_menu_keyboard())
     await call.answer()
-
-
-# Import needed for type hint inside function
-from aiogram.fsm.context import FSMContext  # noqa: E402 (already imported by aiogram)

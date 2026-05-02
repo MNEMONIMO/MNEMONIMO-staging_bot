@@ -1,6 +1,6 @@
 from aiogram import Router, F
 from aiogram.filters import CommandStart, Command
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 
 from app.db.models import User
@@ -20,6 +20,23 @@ async def cmd_start(message: Message, state: FSMContext, db_user: User):
         parse_mode="HTML",
         reply_markup=main_menu_keyboard(),
     )
+
+
+@router.message(Command("cancel"))
+async def cmd_cancel(message: Message, state: FSMContext):
+    """Drop any in-progress FSM state and return to the main menu."""
+    current = await state.get_state()
+    await state.clear()
+    if current is None:
+        await message.answer(
+            "Нет активного действия для отмены.",
+            reply_markup=main_menu_keyboard(),
+        )
+    else:
+        await message.answer(
+            "❌ Текущее действие отменено.",
+            reply_markup=main_menu_keyboard(),
+        )
 
 
 @router.message(Command("help"))

@@ -3,7 +3,7 @@ from sqlalchemy import select, update, func
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import Project, ProjectImage, ProjectStatus, ImageType, Tariff
+from app.db.models import Project, ProjectImage, ProjectStatus, ImageType
 
 
 class ProjectRepository:

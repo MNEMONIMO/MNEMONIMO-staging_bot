@@ -1,10 +1,10 @@
 import httpx
 import asyncio
 import base64
-from typing import List, Optional
+from typing import List
 from loguru import logger
 from app.core.config import settings
-from app.db.models import Project, BudgetTier, InteriorStyle, RoomType
+from app.db.models import Project
 
 
 # ─── Prompt builder ───────────────────────────────────────────────────────────

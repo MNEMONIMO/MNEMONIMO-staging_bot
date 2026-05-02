@@ -23,7 +23,6 @@ def add_watermark(image_bytes: bytes, text: str = "AI Preview • Staging Bot") 
         step_x = width // 3
         step_y = height // 3
 
-        import math
         for row in range(3):
             for col in range(3):
                 x = col * step_x

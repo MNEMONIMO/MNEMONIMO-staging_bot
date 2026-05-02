@@ -2,14 +2,12 @@ from aiogram import Router, F
 from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
-from loguru import logger
 
 from app.core.config import settings
-from app.db.models import ProjectStatus, ActorType
+from app.db.models import ProjectStatus
 from app.db.session import AsyncSessionLocal
 from app.repositories.project_repository import ProjectRepository
 from app.repositories.user_repository import UserRepository
-from app.repositories.audit_log_repository import AuditLogRepository
 from app.services.generation.service import GenerationService
 from app.services.notification.service import NotificationService
 from app.bot.states.states import AdminFlow

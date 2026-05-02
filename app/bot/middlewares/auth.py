@@ -3,13 +3,13 @@ from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject, Message, CallbackQuery
 from loguru import logger
 
-from app.db.session import AsyncSessionLocal
-from app.repositories.user_repository import UserRepository
 from app.bot.messages import BLOCKED_USER
+from app.db.session import AsyncSessionLocal
+from app.services.users.service import UserService
 
 
 class AuthMiddleware(BaseMiddleware):
-    """Upserts user on every update and blocks banned accounts."""
+    """Upserts the user on every update, auto-promotes admins, and blocks banned accounts."""
 
     async def __call__(
         self,
@@ -17,7 +17,6 @@ class AuthMiddleware(BaseMiddleware):
         event: TelegramObject,
         data: dict[str, Any],
     ) -> Any:
-        # Extract Telegram user from the event
         tg_user = None
         if isinstance(event, (Message, CallbackQuery)):
             tg_user = event.from_user
@@ -26,8 +25,8 @@ class AuthMiddleware(BaseMiddleware):
             return await handler(event, data)
 
         async with AsyncSessionLocal() as session:
-            repo = UserRepository(session)
-            user, created = await repo.get_or_create(
+            service = UserService(session)
+            user, created = await service.get_or_register(
                 telegram_id=tg_user.id,
                 username=tg_user.username,
                 first_name=tg_user.first_name,
@@ -43,7 +42,6 @@ class AuthMiddleware(BaseMiddleware):
                     await event.answer(BLOCKED_USER, show_alert=True)
                 return
 
-            # Inject user and session into handler data
             data["db_user"] = user
             data["is_new_user"] = created
 

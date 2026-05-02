@@ -1,4 +1,3 @@
-import io
 from typing import Optional
 from aiogram import Bot
 from aiogram.types import BufferedInputFile, InputMediaPhoto
@@ -77,7 +76,10 @@ class NotificationService:
             await bot.send_message(
                 telegram_id,
                 "Что дальше?",
-                reply_markup=result_keyboard(has_free_plan=is_free),
+                reply_markup=result_keyboard(
+                    project_id=project.id,
+                    has_free_plan=is_free,
+                ),
             )
 
         except Exception as e:

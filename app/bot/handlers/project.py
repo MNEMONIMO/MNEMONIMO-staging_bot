@@ -1,11 +1,10 @@
-import io
 from aiogram import Router, F, Bot
 from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery, PhotoSize
 from aiogram.fsm.context import FSMContext
 from loguru import logger
 
-from app.db.models import User, ProjectStatus, ImageType, Tariff
+from app.db.models import User, ProjectStatus, ImageType
 from app.db.session import AsyncSessionLocal
 from app.repositories.project_repository import ProjectRepository
 from app.repositories.user_repository import UserRepository
@@ -28,10 +27,6 @@ from app.core.config import settings
 from app.integrations.storage.s3 import storage_service
 
 router = Router(name="project")
-
-
-def _fmt(value, fallback="—"):
-    return value if value else fallback
 
 
 # ─── Start project ────────────────────────────────────────────────────────────

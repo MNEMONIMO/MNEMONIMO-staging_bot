@@ -1,9 +1,7 @@
-import io
-from typing import Optional
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import Project, ProjectStatus, ImageType, Tariff, GenerationJobStatus
+from app.db.models import Project, ProjectStatus, ImageType, Tariff
 from app.repositories.project_repository import ProjectRepository
 from app.repositories.generation_job_repository import GenerationJobRepository
 from app.repositories.audit_log_repository import AuditLogRepository
@@ -48,8 +46,8 @@ def build_concept_text(project: Project) -> str:
         f"💡 <b>Идея:</b> Пространство оформлено в духе {style.lower()} — "
         f"баланс функциональности и эстетики.",
         f"🚶 <b>Свободное пространство:</b> {space}% площади оставлено для свободного прохода.",
-        f"✨ <b>Акценты:</b> Натуральные материалы, продуманное освещение, "
-        f"стилевая консистентность.",
+        "✨ <b>Акценты:</b> Натуральные материалы, продуманное освещение, "
+        "стилевая консистентность.",
         f"💰 <b>Бюджет:</b> Подобрано с учётом {budget} ценового сегмента.",
     ]
     if project.extra_notes:

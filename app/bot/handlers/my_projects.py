@@ -8,7 +8,7 @@ from app.db.session import AsyncSessionLocal
 from app.repositories.project_repository import ProjectRepository
 from app.bot.messages import (
     NO_PROJECTS, MY_PROJECTS_HEADER,
-    ROOM_TYPE_LABELS, STYLE_LABELS, STATUS_LABELS, ERROR_GENERAL,
+    ROOM_TYPE_LABELS, STYLE_LABELS, STATUS_LABELS,
 )
 from app.bot.keyboards.keyboards import project_actions_keyboard, main_menu_keyboard
 from app.services.generation.service import GenerationService
@@ -136,4 +136,75 @@ async def cb_result_upgrade(call: CallbackQuery):
     from app.bot.messages import TARIFF_SELECTION
     from app.bot.keyboards.keyboards import tariff_keyboard
     await call.message.answer(TARIFF_SELECTION, parse_mode="HTML", reply_markup=tariff_keyboard())
+    await call.answer()
+
+
+def _parse_result_project_id(call: CallbackQuery) -> int | None:
+    """Extract the project id encoded into ``result:<action>:<id>`` callbacks."""
+    parts = call.data.split(":")
+    if len(parts) < 3:
+        return None
+    try:
+        return int(parts[2])
+    except ValueError:
+        return None
+
+
+@router.callback_query(F.data.startswith("result:retry"))
+async def cb_result_retry(call: CallbackQuery, db_user: User):
+    """Re-enqueue an additional variant for the most recently finished project."""
+    project_id = _parse_result_project_id(call)
+
+    async with AsyncSessionLocal() as session:
+        repo = ProjectRepository(session)
+        if project_id is None:
+            recent = await repo.get_user_projects(db_user.id, limit=1)
+            project = recent[0] if recent else None
+        else:
+            project = await repo.get_by_id(project_id)
+
+        if not project or project.user_id != db_user.id:
+            await call.answer("Проект не найден.", show_alert=True)
+            return
+
+        service = GenerationService(session)
+        try:
+            await service.enqueue(project.id)
+        except Exception as e:  # pragma: no cover - defensive
+            await call.answer("❌ Не удалось перезапустить.", show_alert=True)
+            from loguru import logger
+            logger.error(f"result:retry failed for project {project.id}: {e}")
+            return
+
+    await call.message.answer(
+        f"🔄 Запускаю ещё одну генерацию для проекта #{project.id}.",
+    )
+    await call.answer()
+
+
+@router.callback_query(F.data.startswith("result:change_style"))
+async def cb_result_change_style(call: CallbackQuery, state: FSMContext, db_user: User):
+    """Open the style picker for an existing project; new tariff selection follows."""
+    from app.bot.messages import ASK_STYLE
+    from app.bot.keyboards.keyboards import style_keyboard
+    from app.bot.states.states import ProjectForm
+
+    project_id = _parse_result_project_id(call)
+
+    async with AsyncSessionLocal() as session:
+        repo = ProjectRepository(session)
+        if project_id is None:
+            recent = await repo.get_user_projects(db_user.id, limit=1)
+            project = recent[0] if recent else None
+        else:
+            project = await repo.get_by_id(project_id)
+
+        if not project or project.user_id != db_user.id:
+            await call.answer("Проект не найден.", show_alert=True)
+            return
+
+    await state.clear()
+    await state.update_data(project_id=project.id, photo_count=len(project.images))
+    await state.set_state(ProjectForm.style)
+    await call.message.answer(ASK_STYLE, reply_markup=style_keyboard())
     await call.answer()

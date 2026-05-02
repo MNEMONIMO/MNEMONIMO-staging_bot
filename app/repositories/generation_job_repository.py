@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timezone

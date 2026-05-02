@@ -1,9 +1,11 @@
+from typing import Optional
+
 from aiogram.types import (
-    InlineKeyboardMarkup, InlineKeyboardButton,
+    InlineKeyboardMarkup,
     ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove,
 )
 from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
-from app.db.models import RoomType, InteriorStyle, BudgetTier, FreeSpace, Tariff, ProjectStatus
+from app.db.models import RoomType, InteriorStyle, BudgetTier, FreeSpace, ProjectStatus
 
 
 def main_menu_keyboard() -> ReplyKeyboardMarkup:
@@ -130,10 +132,19 @@ def payment_keyboard(invoice_url: str | None = None) -> InlineKeyboardMarkup:
 
 # ─── Post-result ──────────────────────────────────────────────────────────────
 
-def result_keyboard(has_free_plan: bool = False) -> InlineKeyboardMarkup:
+def result_keyboard(
+    project_id: Optional[int] = None,
+    has_free_plan: bool = False,
+) -> InlineKeyboardMarkup:
+    """Buttons rendered after a generation finishes.
+
+    ``project_id`` is encoded into the callback data so retry / change-style
+    actions know which project to operate on.
+    """
     builder = InlineKeyboardBuilder()
-    builder.button(text="🔄 Ещё вариант", callback_data="result:retry")
-    builder.button(text="🎨 Сменить стиль", callback_data="result:change_style")
+    suffix = f":{project_id}" if project_id is not None else ""
+    builder.button(text="🔄 Ещё вариант", callback_data=f"result:retry{suffix}")
+    builder.button(text="🎨 Сменить стиль", callback_data=f"result:change_style{suffix}")
     builder.button(text="➕ Новый проект", callback_data="result:new_project")
     if has_free_plan:
         builder.button(text="💎 Купить полный пакет", callback_data="result:upgrade")

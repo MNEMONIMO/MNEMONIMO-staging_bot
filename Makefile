@@ -1,4 +1,11 @@
-.PHONY: up down bot worker migrate test lint clean
+.PHONY: up down bot worker migrate test lint clean install install-dev
+
+# ─── Setup ────────────────────────────────────────────────────────────────────
+install:
+	pip install -r requirements.txt
+
+install-dev:
+	pip install -r requirements-dev.txt
 
 # ─── Docker ───────────────────────────────────────────────────────────────────
 up:
