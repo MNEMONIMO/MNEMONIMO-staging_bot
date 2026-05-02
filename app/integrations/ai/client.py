@@ -7,6 +7,7 @@ from loguru import logger
 
 from app.core.config import settings
 from app.db.models import Project
+from app.integrations.ai.llm_text import LlmTextClient
 from app.integrations.ai.vision import PhotoAnalysis, VisionClient
 
 
@@ -133,8 +134,13 @@ class AIGenerationClient:
 
     REPLICATE_API_URL = "https://api.replicate.com/v1/predictions"
 
-    def __init__(self, vision: Optional[VisionClient] = None) -> None:
+    def __init__(
+        self,
+        vision: Optional[VisionClient] = None,
+        llm_text: Optional[LlmTextClient] = None,
+    ) -> None:
         self._vision = vision
+        self._llm_text = llm_text
 
     @property
     def vision(self) -> VisionClient:
@@ -148,6 +154,19 @@ class AIGenerationClient:
                 provider=settings.vision_provider,
             )
         return self._vision
+
+    @property
+    def llm_text(self) -> LlmTextClient:
+        """Lazy LLM client (concept + shopping list); reuses vision creds."""
+        if self._llm_text is None:
+            self._llm_text = LlmTextClient(
+                api_key=settings.vision_api_key,
+                model=settings.llm_text_model,
+                base_url=settings.vision_base_url,
+                timeout_seconds=settings.vision_timeout_seconds,
+                provider=settings.vision_provider,
+            )
+        return self._llm_text
 
     async def generate_interior(
         self,
@@ -250,6 +269,18 @@ class AIGenerationClient:
     async def analyze_photo_structured(self, image_bytes: bytes) -> PhotoAnalysis:
         """Same as :meth:`analyze_photo` but returns the typed model."""
         return await self.vision.analyze(image_bytes)
+
+    async def build_concept(
+        self, project: Project, analysis: Optional[PhotoAnalysis] = None,
+    ) -> Optional[str]:
+        """LLM-generated concept blurb (ТЗ §13.6) or ``None`` on failure."""
+        return await self.llm_text.build_concept(project, analysis)
+
+    async def build_shopping_list(
+        self, project: Project, analysis: Optional[PhotoAnalysis] = None,
+    ) -> Optional[dict[str, Any]]:
+        """LLM shopping list (ТЗ §13.7) or ``None`` on failure."""
+        return await self.llm_text.build_shopping_list(project, analysis)
 
 
 ai_client = AIGenerationClient()

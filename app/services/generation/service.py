@@ -188,12 +188,17 @@ class GenerationService:
                 )
 
             # ── Step 4: Concept text + shopping list ─────────────────────────
-            concept = build_concept_text(project)
-            shopping_list = (
-                build_shopping_list(project)
-                if self.has_shopping_list(project.tariff)
-                else None
-            )
+            # Try the LLM first (ТЗ §13.6 / §13.7); fall back to the static
+            # templates so the pipeline still works without a vision/LLM key.
+            concept = await ai_client.build_concept(project, analysis)
+            if not concept:
+                concept = build_concept_text(project)
+
+            shopping_list = None
+            if self.has_shopping_list(project.tariff):
+                shopping_list = await ai_client.build_shopping_list(project, analysis)
+                if not shopping_list:
+                    shopping_list = build_shopping_list(project)
 
             await self.project_repo.set_result(
                 project_id=project_id,
