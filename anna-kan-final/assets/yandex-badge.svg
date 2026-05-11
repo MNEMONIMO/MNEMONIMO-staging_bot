@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240" role="img" aria-label="Хорошее место — Яндекс 2025/26">
+  <defs>
+    <filter id="sh" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#000" flood-opacity=".22"/>
+    </filter>
+  </defs>
+  <!-- 5-pointed star with rounded corners -->
+  <g filter="url(#sh)">
+    <path fill="#FFCC00" stroke="#FFCC00" stroke-width="22" stroke-linejoin="round" d="
+      M 120 22
+      L 145 92
+      L 219 96
+      L 161 142
+      L 181 214
+      L 120 172
+      L 59 214
+      L 79 142
+      L 21 96
+      L 95 92 Z"/>
+  </g>
+  <!-- Yandex Я -->
+  <text x="120" y="92" font-family="Arial, Helvetica, sans-serif" font-size="38" font-weight="900" fill="#FC3F1D" text-anchor="middle">Я</text>
+  <!-- Хорошее место -->
+  <text x="120" y="125" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="800" fill="#0E0E0E" text-anchor="middle">Хорошее</text>
+  <text x="120" y="146" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="800" fill="#0E0E0E" text-anchor="middle">место</text>
+  <!-- date -->
+  <text x="120" y="166" font-family="Inter, Arial, sans-serif" font-size="9.5" font-weight="700" fill="#444" text-anchor="middle" letter-spacing="0.6">ЯНДЕКС · 2025/26</text>
+  <!-- 5 stars -->
+  <text x="120" y="184" font-family="Arial, sans-serif" font-size="13" fill="#0E0E0E" text-anchor="middle" letter-spacing="2">★★★★★</text>
+</svg>
