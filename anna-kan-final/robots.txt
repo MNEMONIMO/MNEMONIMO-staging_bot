@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /tilda/
+Disallow: /cgi-bin/
+Disallow: /*.json$
+
+User-agent: Yandex
+Allow: /
+Clean-param: utm_source&utm_medium&utm_campaign&utm_term&utm_content&yclid&gclid&fbclid
+
+Sitemap: https://xn--80aaa3bnad.su/sitemap.xml
+Host: xn--80aaa3bnad.su
